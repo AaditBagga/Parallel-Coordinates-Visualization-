@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html>
+
+<meta charset="utf-8">
+<head>
+    <title>Parallel Coordinate Visualization</title>
+</head>
+
+<style>
+    #button {
+        background-color: silver;
+        color: black;
+        padding: 10px 10px;
+        text-align: left;
+        display: inline-block;
+        font-size: 25px;
+    }
+</style>
+
+<script src="https://d3js.org/d3.v4.js"></script>
+
+<div id="car_data"></div>
+<div id = "buttonstyle">
+    <button id = "selectButton">Select</button>
+    <button id = "unselectButton">Unselect</button>
+</div>
+<body>
+
+
+<script>
+
+
+// Parse the Data
+d3.csv("cars.csv", function(data) {
+
+  // Extract the list of dimensions 
+  dimensions = ["economy_mpg","cylinders","displacement_cc","power_hp","weight_lb","speed_sec","year"]
+
+  // set the dimensions and margins of the graph
+var margin = {top: 40, right: 20, bottom: 20, left: 20},
+  width = 2000 - margin.left - margin.right,
+  height = 2000 - margin.top - margin.bottom;
+
+// append the svg object to the body of the page
+var svg = d3.select("#car_data")
+  .append("svg")
+  .attr("width", width + margin.left + margin.right)
+  .attr("height", height + margin.top + margin.bottom)
+  .append("g")
+  .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+  // For each dimension,Building a linear scale
+  var y = {}
+  for (i in dimensions) {
+    name = dimensions[i]
+    y[name] = d3.scaleLinear()
+      .domain( d3.extent(data, function(d) { return +d[name]; }) )
+      .range([height, 0])
+  }
+
+  // Build the X scale 
+  x = d3.scalePoint()
+    .range([0, width])
+    .padding(1)
+    .domain(dimensions); 
+
+  // The x function take a row of the csv as input, and return x and y coordinates 
+  function path(d) {
+      return d3.line()(dimensions.map(function(p) { return [x(p), y[p](d[p])]; }));
+  }  
+
+  // Draw the lines
+  lines = svg.selectAll("svgDraw")
+    .data(data)
+    .enter().append("path")
+    .attr("d",  path)
+    .style("fill", "none")
+    .style("stroke", "red")
+    .style("stroke-width","2")
+    .style("opacity", 0.2)
+
+  // Draw the axis:
+  svg.selectAll("Axis")
+    .data(dimensions).enter()
+    .append("g")
+    .attr("transform", function(d) { return "translate(" + x(d) + ")"; })
+    .each(function(d) { d3.select(this).call(d3.axisLeft().scale(y[d])); })
+    .append("text")
+      .style("text-anchor", "middle")
+      .attr("y", -10)
+      .text(function(d) { return d; })
+      .style("fill", "green")
+      .style("font-size","20px")
+
+//Interaction
+d3.select("#selectButton").on("click",function(){
+
+    lines.on("mouseover",function(event,d){
+        d3.select(this)
+        .style("stroke","limegreen")
+        .style("stroke-width","2")
+        .style("opacity", 0.8)
+    })
+});
+
+d3.select("#unselectButton").on("click",function(){
+    lines.on("mouseover",function(event,d){
+        d3.select(this)
+        .style("stroke","red")
+        .style("stroke-width","2")
+    })
+});
+});
+
+</script>
+</body>
+</html>
